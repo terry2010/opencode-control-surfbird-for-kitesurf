@@ -1,5 +1,7 @@
 # opencode-control-surfbird-for-kitesurf
 
+[English](README.md) · [中文](i18n/README.zh-CN.md)
+
 An [OpenCode](https://opencode.ai/) plugin that gives an AI agent full control of a [Kitesurf](https://github.com/cloudflare/kitesurf) browser engine over the Chrome DevTools Protocol (CDP) — like a human operating a browser. Works with the self-hosted [surfbird](https://github.com/terry2010/surfbird) distribution (raw or token-auth mode) and upstream Kitesurf deployments. Exposes **28 `surfbird_*` tools**: tab management, navigation, semantic accessibility snapshots, click/type/fill, waits, JavaScript evaluation, screenshots, PDF export, console/network inspection, WebMCP, and a raw CDP escape hatch — with one isolated browser per agent session.
 
 Sibling project: [`dsh-control-surfbird-for-kitesurf`](https://github.com/terry2010/dsh-control-surfbird-for-kitesurf) — same tools for DSH (DeepSeek Harness). Both share the host-independent `src/cdp/` core.
@@ -71,7 +73,79 @@ The ciphertext is bound to this machine's UUID — copying it elsewhere fails to
 
 Each OpenCode session gets its own isolated browser: tabs, cookies and page state never leak between sessions, and deleting the session destroys its tabs. The agent calls `surfbird_*` tools directly — a bundled skill (`surfbird-control`) teaches the observe → act → verify workflow.
 
-Try prompts like:
+Paste prompts from the [Test prompts](#test-prompts) section to exercise every tool.
+
+## Test prompts
+
+Paste these into an OpenCode session to exercise every tool. All examples use [zhuikan.com](https://zhuikan.com) (a GitHub trending rank site with a search box and detail pages). Start with the first block.
+
+**Session & browser**
+
+| Prompt | Exercises |
+|---|---|
+| `Check the surfbird connection status` | `surfbird_status` (incl. `capabilities`) |
+| `List all open tabs and tell me which is current` | `surfbird_tabs` |
+| `Open https://zhuikan.com in a new tab` | `surfbird_new_tab` |
+| `Open https://zhuikan.com but don't wait for it to load` | `surfbird_new_tab wait=none` |
+| `Switch to the other tab, then close this one` | `surfbird_select_tab` + `surfbird_close_tab` |
+| `Use raw CDP to get the current page's layout metrics` | `surfbird_cdp` |
+
+**Navigation**
+
+| Prompt | Exercises |
+|---|---|
+| `Navigate this tab to https://zhuikan.com` | `surfbird_navigate` |
+| `Open https://zhuikan.com/repos/aws__aws-emulator, then go back and forward` | `surfbird_navigate` + `surfbird_back` + `surfbird_forward` |
+| `Hard-reload zhuikan.com bypassing cache` | `surfbird_reload hard=true` |
+
+**Content**
+
+| Prompt | Exercises |
+|---|---|
+| `Give me a semantic snapshot of zhuikan.com` | `surfbird_snapshot` |
+| `Show me zhuikan.com's accessibility tree instead` | `surfbird_ax` |
+| `Open a repo detail page on zhuikan.com and extract the article as markdown` | `surfbird_extract` |
+| `How many times does "GitHub" appear on zhuikan.com? Jump to the second match.` | `surfbird_find` |
+| `List all the links on zhuikan.com` | `surfbird_links` |
+| `Check whether zhuikan.com registered any WebMCP tools` | `surfbird_webmcp action=list` |
+
+**Interaction** (zhuikan.com has a search box, board tabs and repo links)
+
+| Prompt | Exercises |
+|---|---|
+| `On zhuikan.com, click the first repo link in the rankings and wait for the result` | `surfbird_click` + `surfbird_wait` |
+| `Double-click the main heading on zhuikan.com` | `surfbird_double_click` |
+| `On zhuikan.com, fill the search box with "GitHub Trending Rank Radar"` | `surfbird_fill` |
+| `Type "rust" into zhuikan.com's search box` | `surfbird_type` |
+| `On zhuikan.com, press Enter to submit the search` | `surfbird_press_key` |
+| `Scroll down 1000 pixels on zhuikan.com to see more rankings` | `surfbird_scroll` |
+
+**Wait & eval**
+
+| Prompt | Exercises |
+|---|---|
+| `On zhuikan.com, wait until the page text contains "GitHub"` | `surfbird_wait state=text` |
+| `Wait for zhuikan.com's network to go idle, then tell me the page title` | `surfbird_wait state=networkidle` + `surfbird_evaluate` |
+| `Evaluate document.title and window.location.href on zhuikan.com` | `surfbird_evaluate` |
+
+**Output**
+
+| Prompt | Exercises |
+|---|---|
+| `Take a screenshot of zhuikan.com's viewport` | `surfbird_screenshot` |
+| `Screenshot only the rankings area element` (grab its ref from snapshot first) | `surfbird_screenshot target={ref}` |
+| `Take a full-page screenshot of zhuikan.com` | `surfbird_screenshot fullPage=true` |
+| `Export zhuikan.com as a PDF` | `surfbird_pdf` |
+
+**Diagnostics**
+
+| Prompt | Exercises |
+|---|---|
+| `Show me console errors from zhuikan.com` | `surfbird_console only=errors` |
+| `List the network requests zhuikan.com made` | `surfbird_network` |
+| `Get the response body of zhuikan.com's first request` | `surfbird_network action=body` |
+
+**Multi-step walkthrough** — one prompt that chains many tools (this is *not* a single-tool test; it exercises the whole observe → act → verify loop):
 
 ```
 打开 https://zhuikan.com，在搜索框输入 "GitHub Trending Rank Radar" 并回车提交，
@@ -87,6 +161,8 @@ Open https://zhuikan.com, type "GitHub Trending Rank Radar" into the search box
 and press Enter, wait for results, tell me the final URL,
 count occurrences with surfbird_find, then screenshot just the repo title area.
 ```
+
+Expected chain: `navigate` → `snapshot`(find searchbox ref) → `fill` → `press_key enter` → `wait`(url/text/networkidle) → `evaluate`/`snapshot` → `find` → `screenshot target=…`. This is the real-world flow that exercises ref handling, controlled-input events, page-settle waits and element screenshots in one go.
 
 ## Tools (28)
 
