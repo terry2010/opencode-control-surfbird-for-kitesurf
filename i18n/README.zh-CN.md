@@ -33,7 +33,9 @@ opencode plugin add opencode-control-surfbird-for-kitesurf
 
 ## 配置
 
-通过 `opencode.json(c)` 中的插件 `options` 或环境变量设置引擎端点和 token。
+**OpenCode 桌面端：** 打开 **Settings → Surfbird**——端点、token 文件（粘贴/导入会加密为机器绑定的 `surfbird-v1:` 文件，绝不写入 `opencode.json`）、会话上限、超时和 `/json/version` 实时探活都在这里。改动会写回全局 `opencode.json(c)` 并热重载插件。
+
+**任意客户端（TUI/headless/CI）：** 通过 `opencode.json(c)` 中的插件 `options` 或环境变量设置。
 
 ```jsonc
 {

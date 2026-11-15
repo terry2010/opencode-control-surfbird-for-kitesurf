@@ -10,7 +10,7 @@ You control a real Kitesurf browser engine through `surfbird_*` tools. Each agen
 
 ## Setup (first use)
 
-1. Call `surfbird_status`. If it fails with a connection error, the engine is unreachable — tell the user to configure the endpoint/token in `opencode.json` under this plugin's `options` (or env `SURFBIRD_URL`/`SURFBIRD_TOKEN`, `SURFBIRD_TOKEN` also via `tokenFile`). Do not ask the user for credentials in chat.
+1. Call `surfbird_status`. If it fails with a connection error, the engine is unreachable — tell the user to open **Settings → Surfbird** in the OpenCode desktop app (endpoint/token file/limits live there) or set `opencode.json` plugin `options` / env `SURFBIRD_URL`/`SURFBIRD_TOKEN`. Do not ask the user for credentials in chat.
 2. `surfbird_status` reports `product`, tab count and session budget. Cheap — call it when unsure of state.
 
 ## Core workflow: observe → act → verify
@@ -66,7 +66,7 @@ Use `surfbird_find` to check whether specific text appears on the page, count oc
 
 ## Error codes
 
-`browser_reset` (connection dropped — all tabs gone, retry), `no_tab`/`bad_tab_id`/`not_attached` (tab problems — `surfbird_tabs`), `ref_stale`/`doc_changed` (re-snapshot), `no_article` (use snapshot instead), `bad_args` (invalid tool argument), `timeout` (raise timeoutMs or check state), `element_not_visible` (scroll into view or pick another target), `too_many_sessions` (too many concurrent agent sessions), `cdp_error` (engine/protocol error — message has details), `not_configured` (endpoint/token missing — direct user to plugin options/env config), `unreachable` (engine endpoint refused/unreachable — direct user to check the surfbird container or endpoint config).
+`browser_reset` (connection dropped — all tabs gone, retry), `no_tab`/`bad_tab_id`/`not_attached` (tab problems — `surfbird_tabs`), `ref_stale`/`doc_changed` (re-snapshot), `no_article` (use snapshot instead), `bad_args` (invalid tool argument), `timeout` (raise timeoutMs or check state), `element_not_visible` (scroll into view or pick another target), `too_many_sessions` (too many concurrent agent sessions), `cdp_error` (engine/protocol error — message has details), `not_configured` (endpoint/token missing — direct user to Settings → Surfbird or plugin options/env), `unreachable` (engine endpoint refused/unreachable — direct user to check the surfbird container or endpoint config).
 
 ## Session lifetime
 

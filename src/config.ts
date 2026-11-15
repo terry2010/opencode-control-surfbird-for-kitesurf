@@ -47,8 +47,9 @@ function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined
 }
 
-function num(v: unknown, d: number): number {
-  return typeof v === 'number' && Number.isFinite(v) ? v : d
+function num(v: unknown, d: number, min = 1): number {
+  // options 是无 schema 校验的裸 JSON——对齐 DSH schemastery 的 .min() 约束，钳到下限
+  return typeof v === 'number' && Number.isFinite(v) ? Math.max(min, v) : d
 }
 
 /** 解析生效配置：options（opencode.json plugin options）> env > 默认。 */
@@ -73,10 +74,10 @@ export function resolveConfig(options: Record<string, unknown>): ResolvedConfig 
     tokenFile,
     tokenFileError: fileRes.error,
     tokenFileEncrypted: fileRes.encrypted,
-    requestTimeoutMs: num(options.requestTimeoutMs, 120000),
-    keepaliveMs: num(options.keepaliveMs, 300000),
-    maxSessions: num(options.maxSessions, 8),
-    idleEvictMs: num(options.idleEvictMs, 300000),
+    requestTimeoutMs: num(options.requestTimeoutMs, 120000, 1000),
+    keepaliveMs: num(options.keepaliveMs, 300000, 30000),
+    maxSessions: num(options.maxSessions, 8, 1),
+    idleEvictMs: num(options.idleEvictMs, 300000, 60000),
     screenshotDir: str(options.screenshotDir),
     debugLog: options.debugLog === true,
     configSource: `${endpointSource}+${tokenSource}`,

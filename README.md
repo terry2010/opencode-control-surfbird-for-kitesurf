@@ -33,7 +33,9 @@ Local plugin directories need `package.json` with `name` + `exports` — this re
 
 ## Configure
 
-Set the engine endpoint and token via plugin `options` in `opencode.json(c)`, or environment variables.
+**OpenCode desktop:** open **Settings → Surfbird** — endpoint, token file (paste/import encrypts to a machine-bound `surfbird-v1:` file, never stored in `opencode.json`), session limits, timeouts and a live `/json/version` probe all live there. Changes write back to the global `opencode.json(c)` and hot-reload the plugin.
+
+**Any client (TUI/headless/CI):** set plugin `options` in `opencode.json(c)`, or environment variables.
 
 ```jsonc
 {

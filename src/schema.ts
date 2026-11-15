@@ -70,7 +70,12 @@ function valueToJsonSchema(spec: ValueSpec): Record<string, unknown> {
       return base
     case 'object': {
       base.type = 'object'
-      if (spec.properties) base.properties = mapToJsonSchema(spec.properties).properties
+      if (spec.properties) {
+        const nested = mapToJsonSchema(spec.properties)
+        base.properties = nested.properties
+        // 嵌套对象的 required 同样要透出（如 screenshot clip 的 x/y/width/height）
+        if (nested.required.length) base.required = nested.required
+      }
       base.additionalProperties = spec.additionalProperties
       return base
     }
