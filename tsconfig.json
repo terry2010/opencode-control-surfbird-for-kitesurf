@@ -9,9 +9,11 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@opentui/solid",
     "declaration": false,
     "sourceMap": false
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["src/gui.tsx", "src/gui/**"]
 }

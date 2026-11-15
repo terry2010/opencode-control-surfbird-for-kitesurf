@@ -44,7 +44,18 @@ OpenCode 插件（V2 `Plugin.define` API）：通过 Kitesurf CDP 协议控制�
   模型按名直调会报 "No tool named …"。必须显式 `options:{codemode:false}`
   才是原生工具**（已在 registerSurfbirdTools 里设置，勿删）
 - session 隔离键 = `context.sessionID`；`session.deleted` 事件触发浏览器断开
-- 截图/PDF 返回 `file` content part（`file://` URI）+ 落盘路径，不走附件服务
-- 配置 = plugin `options`（opencode.json）> env > 默认；没有 DSH 那样的设置 UI
+- 截图 ≤8MiB 返回 `data:` URI file part（`file://` 会炸会话历史回放，勿改回）；
+  更大截图/PDF 只回落盘路径
+- 配置 = plugin `options`（opencode.json）> env > 默认
+- **设置 UI 有两处入口**：desktop `./gui-experimental`（Settings → Surfbird，
+  Electron main IPC 写回 opencode.json(c)）；TUI `./tui`（`/surfbird-settings`
+  命令 + 自定义 dialog，draft 本地暂存、Save 才写盘）
+- **TUI 关键约束（对照 opencode 源码核实）**：写 opencode.json 会触发插件
+  代际重建，旧 context 的 keymap layer 注销 → 已开 dialog 变死界面。
+  因此 tui.tsx 里所有写盘路径都必须 toast + `dialog.clear()`，禁止在写盘后
+  用旧 context 重开 dialog；未写盘的 prompt 流程才允许 reopen（draft 用
+  solid-js/store 跨实例传递）
+- `src/config-file.ts`/`src/config-patch.ts`/`src/token-store.ts` 是
+  GUI main 与 TUI 共用的配置读写层，改动两边同时生效
 - E2E 已验证：opencode.json plugins 本地路径 + options{endpoint,tokenFile}
   → surfbird_status/navigate/snapshot 真机全通（2026-11-15）
