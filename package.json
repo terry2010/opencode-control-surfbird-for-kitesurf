@@ -1,0 +1,60 @@
+{
+  "name": "opencode-control-surfbird-for-kitesurf",
+  "version": "0.1.0",
+  "description": "OpenCode plugin: AI agent controls a Kitesurf/surfbird browser engine over CDP — 28 surfbird_* tools with per-session isolation, semantic snapshots, screenshots/PDF. Shares the host-independent src/cdp core with the DSH plugin.",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "kitesurf",
+    "surfbird",
+    "browser",
+    "cdp",
+    "automation",
+    "ai-agent",
+    "browser-automation",
+    "agent-tools",
+    "web-automation"
+  ],
+  "license": "Apache-2.0",
+  "author": {
+    "name": "terry2010",
+    "url": "https://github.com/terry2010"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "main": "lib/index.js",
+  "bin": {
+    "surfbird-token": "./lib/tokenfile-cli.js"
+  },
+  "files": [
+    "src",
+    "lib",
+    "skills",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
+    "test": "node --test test/unit/*.test.mjs",
+    "test:live": "node --test test/live/*.test.mjs",
+    "check": "node --input-type=module -e \"import('./src/index.ts').then(m => { const p = m.default; if (!p || typeof p.setup !== 'function' || !p.id) throw new Error('plugin shape invalid'); console.log('OK', p.id) })\""
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@opencode/plugin": "^2.0.0",
+    "turndown": "^7.2.5",
+    "ws": "~8.22.2",
+    "yaml": "2.9.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

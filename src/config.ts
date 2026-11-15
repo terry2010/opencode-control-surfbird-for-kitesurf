@@ -1,0 +1,84 @@
+/**
+ * src/config.ts — 连接配置解析：plugin options（opencode.json）> env > 默认。
+ *
+ * 与 DSH 版差异：没有 cordis volatile/settings scope——opencode.json 的
+ * plugin options 是静态 JSON，env 兜底，tokenFile 走机器绑定加密。
+ * options 每次调用重读（插件 reload 后 options 对象可能换引用）。
+ */
+
+import { readTokenFile } from './tokenfile.ts'
+
+export const DEFAULT_ENDPOINT = 'http://127.0.0.1:8080'
+export const ENDPOINT_ENVS = ['SURFBIRD_URL', 'SURFBIRD_ENDPOINT', 'KITESURF_URL', 'KITESURF_ENDPOINT'] as const
+export const TOKEN_ENVS = ['SURFBIRD_TOKEN', 'KITESURF_TOKEN'] as const
+
+export interface ResolvedConfig {
+  endpoint: string
+  token: string
+  tokenFile?: string
+  /** tokenFile 读取/解密失败原因（诊断用；此时回退到 token/env 源）。 */
+  tokenFileError?: string
+  /** tokenFile 内容是 surfbird-v1: 密文。 */
+  tokenFileEncrypted?: boolean
+  requestTimeoutMs: number
+  keepaliveMs: number
+  maxSessions: number
+  idleEvictMs: number
+  screenshotDir?: string
+  debugLog: boolean
+  /** endpoint/token 的实际来源（status 用）。 */
+  configSource: string
+}
+
+function env(name: string): string | undefined {
+  const v = process.env[name]
+  return v && v.trim() ? v.trim() : undefined
+}
+
+function firstEnv(names: readonly string[]): string | undefined {
+  for (const n of names) {
+    const v = env(n)
+    if (v) return v
+  }
+  return undefined
+}
+
+function str(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim() ? v.trim() : undefined
+}
+
+function num(v: unknown, d: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : d
+}
+
+/** 解析生效配置：options（opencode.json plugin options）> env > 默认。 */
+export function resolveConfig(options: Record<string, unknown>): ResolvedConfig {
+  const cfgEndpoint = str(options.endpoint)
+  const envEndpoint = firstEnv(ENDPOINT_ENVS)
+  // options.endpoint 缺省或等于默认值时让 env 优先（与 DSH 版 schemastery 默认值语义一致）
+  const endpoint = cfgEndpoint && cfgEndpoint !== DEFAULT_ENDPOINT ? cfgEndpoint : (envEndpoint ?? cfgEndpoint ?? DEFAULT_ENDPOINT)
+  const endpointSource = cfgEndpoint && cfgEndpoint !== DEFAULT_ENDPOINT ? 'options' : envEndpoint ? 'env' : 'default'
+
+  const tokenFile = str(options.tokenFile)
+  const cfgToken = str(options.token)
+  const envToken = firstEnv(TOKEN_ENVS)
+  const fileRes = readTokenFile(tokenFile)
+  const fileToken = fileRes.token
+  const token = fileToken ?? cfgToken ?? envToken ?? ''
+  const tokenSource = fileToken ? 'tokenFile' : cfgToken ? 'options' : envToken ? 'env' : 'none'
+
+  return {
+    endpoint,
+    token,
+    tokenFile,
+    tokenFileError: fileRes.error,
+    tokenFileEncrypted: fileRes.encrypted,
+    requestTimeoutMs: num(options.requestTimeoutMs, 120000),
+    keepaliveMs: num(options.keepaliveMs, 300000),
+    maxSessions: num(options.maxSessions, 8),
+    idleEvictMs: num(options.idleEvictMs, 300000),
+    screenshotDir: str(options.screenshotDir),
+    debugLog: options.debugLog === true,
+    configSource: `${endpointSource}+${tokenSource}`,
+  }
+}

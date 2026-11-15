@@ -1,0 +1,28 @@
+# opencode-control-surfbird-for-kitesurf
+
+> OpenCode plugin that lets an AI agent control a Kitesurf browser engine over CDP — 28 `surfbird_*` tools, one isolated browser per agent session. Works with the self-hosted surfbird distribution (raw/auth) and upstream Kitesurf. Shares the host-independent `src/cdp/` core with the DSH sibling plugin.
+
+## Key facts
+
+- Package: `opencode-control-surfbird-for-kitesurf` on npm (Apache-2.0, Node >= 22.18 for the CLI, ESM)
+- Repo: https://github.com/terry2010/opencode-control-surfbird-for-kitesurf (created alongside this file)
+- Install: `opencode plugin add opencode-control-surfbird-for-kitesurf`, or local path in `opencode.json` `plugins`
+- Config: plugin `options` in opencode.json (`endpoint`, `token`, `tokenFile`, `requestTimeoutMs`, `keepaliveMs`, `maxSessions`, `idleEvictMs`, `screenshotDir`, `debugLog`) with env fallbacks `SURFBIRD_URL`/`SURFBIRD_ENDPOINT`/`KITESURF_URL`/`KITESURF_ENDPOINT` and `SURFBIRD_TOKEN`/`KITESURF_TOKEN`
+- Session isolation: one WS connection = one isolated browser per OpenCode session; `session.deleted` destroys it
+- Tools: 28 `surfbird_*` tools (tabs, navigate, snapshot/ax, click/fill/type, wait, evaluate, find/extract/links, screenshot/pdf, console/network, webmcp, cdp passthrough, status)
+- Engine limits: no JS dialogs, file upload/download, clipboard, drag/touch, complete keyboard events
+- `src/cdp/` is host-independent shared core (zero host-framework imports) — kept in sync with `dsh-control-surfbird-for-kitesurf`
+
+## Documentation
+
+- [README](README.md) — features, install, configuration, tools, engine limits
+- [Agent skill doc](skills/surfbird-control/SKILL.md) — model-facing usage guide bundled with the plugin
+- [CHANGELOG](CHANGELOG.md) — release history
+- [Contributing](CONTRIBUTING.md) — dev setup and verification commands
+- [AGENTS.md](AGENTS.md) — repo conventions for coding agents
+
+## Related
+
+- [dsh-control-surfbird-for-kitesurf](https://github.com/terry2010/dsh-control-surfbird-for-kitesurf) — DSH (DeepSeek Harness) sibling plugin, same tools
+- [surfbird](https://github.com/terry2010/surfbird) — self-hosted Docker distribution of Kitesurf
+- [kitesurf](https://github.com/cloudflare/kitesurf) — upstream Cloudflare browser engine (Boa + DOM shim, not Chromium)
