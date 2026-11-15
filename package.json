@@ -41,7 +41,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.gui.json --noEmit && vite build",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.tui.json --noEmit && tsc -p tsconfig.gui.json --noEmit && node build.tui.mjs && vite build",
     "prepack": "npm run build",
     "test": "node --test test/unit/*.test.mjs",
     "test:live": "node --test test/live/*.test.mjs",
@@ -65,6 +65,8 @@
     "@opentui/solid": "^0.9.0",
     "@types/node": "^26.6.6",
     "effect": "^4.0.6",
+    "esbuild": "^0.28.2",
+    "esbuild-plugin-solid": "^0.6.0",
     "jsonc-parser": "^3.3.1",
     "solid-js": "^1.9.18",
     "typescript": "^5.9.0",

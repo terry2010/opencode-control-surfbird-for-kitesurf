@@ -55,6 +55,13 @@ OpenCode 插件（V2 `Plugin.define` API）：通过 Kitesurf CDP 协议控制�
   因此 tui.tsx 里所有写盘路径都必须 toast + `dialog.clear()`，禁止在写盘后
   用旧 context 重开 dialog；未写盘的 prompt 流程才允许 reopen（draft 用
   solid-js/store 跨实例传递）
+- **lib/tui.js 必须由 build.tui.mjs（esbuild + esbuild-plugin-solid,
+  generate:'universal'）产出，严禁 tsc emit**：tsc 的 react-jsx 变换把
+  JSX 内 `{expr}` 求值为静态值，信号更新不重绘——dialog 看似正常实则
+  按键/鼠标改了状态也不刷新（2.3.0 实测排查两天，market build.ts 同款
+  注释）。tsconfig.json 已把 src/tui.tsx 排除出 emit，只做 noEmit 检查
+- TUI dialog 键盘走组件内 `keymap.layer({mode:'modal'})`（market 验证
+  路径）；`useKeyboard` 在 2.3.0 的 dialog 里收不到 keypress，勿加
 - `src/config-file.ts`/`src/config-patch.ts`/`src/token-store.ts` 是
   GUI main 与 TUI 共用的配置读写层，改动两边同时生效
 - E2E 已验证：opencode.json plugins 本地路径 + options{endpoint,tokenFile}

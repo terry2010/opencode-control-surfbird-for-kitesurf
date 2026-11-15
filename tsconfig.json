@@ -15,5 +15,5 @@
     "sourceMap": false
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/gui.tsx", "src/gui/**"]
+  "exclude": ["src/gui.tsx", "src/gui/**", "src/tui.tsx"]
 }

@@ -15,8 +15,11 @@
  *   一律 toast + 关 dialog，由用户重开；prompt 取消等未写盘路径才重开。
  * - dialog.show 内部 replace 会重置 size/centered——必须 show 之后 set。
  * - prompt 同样是 replace 语义，会顶掉本 dialog，故编辑流程结束后重开。
+ * - 本文件必须经 esbuild-plugin-solid（build.tui.mjs）产出 lib/tui.js，
+ *   不能走 tsc 的 react-jsx emit——后者把 JSX 内表达式求值为静态值，
+ *   信号更新不重绘（见 build.tui.mjs 注释）。
  */
-import { Plugin, usePlugin } from '@opencode/plugin/tui'
+import { Plugin } from '@opencode/plugin/tui'
 import type { Context } from '@opencode/plugin/tui/context'
 import { For, createSignal } from 'solid-js'
 import { createStore } from 'solid-js/store'
@@ -97,11 +100,12 @@ type ProbeStatus = {
 }
 
 function SurfbirdSettings(props: {
+  context: Context
   initialCursor: number
   draftState: DraftState
   onReopen: (cursor: number, draftState: DraftState) => void
 }) {
-  const context = usePlugin()
+  const context = props.context
   const theme = context.theme
   const [loc, setLoc] = createSignal<PluginConfigLocation>({ file: '', options: {} })
   const [cursor, setCursor] = createSignal(Math.min(props.initialCursor, EDITABLE.length - 1))
@@ -304,13 +308,22 @@ function SurfbirdSettings(props: {
     void editRow(row)
   }
 
+  // dialog 打开期间宿主推入 modal 输入模式——组件内注册 mode:'modal'
+  // keymap layer 处理导航（组件卸载自动注销）。market 插件验证过的
+  // 派发路径；useKeyboard 在 2.3.0 实测收不到 keypress（事件被 keymap
+  // 拦截派发，raw 订阅无回调），故不混用。
+  const up = () => setCursor((c) => (c + EDITABLE.length - 1) % EDITABLE.length)
+  const down = () => setCursor((c) => (c + 1) % EDITABLE.length)
+  const activateCurrent = () => activate(editable())
   context.keymap.layer(() => ({
-    mode: 'global',
+    mode: 'modal',
     commands: [
-      { bind: 'up,k', run: () => setCursor((c) => (c + EDITABLE.length - 1) % EDITABLE.length) },
-      { bind: 'down,j', run: () => setCursor((c) => (c + 1) % EDITABLE.length) },
-      { bind: 'return', run: () => activate(editable()) },
-      { bind: 'space', run: () => activate(editable()) },
+      { bind: 'up', run: up },
+      { bind: 'k', run: up },
+      { bind: 'down', run: down },
+      { bind: 'j', run: down },
+      { bind: 'return', run: activateCurrent },
+      { bind: 'space', run: activateCurrent },
     ],
   }))
 
@@ -357,6 +370,11 @@ function SurfbirdSettings(props: {
                 flexDirection="row"
                 justifyContent="space-between"
                 backgroundColor={EDITABLE_INDEX.get(row) === cursor() ? theme.background.raised.base : undefined}
+                onMouseOver={() => setCursor(EDITABLE_INDEX.get(row)!)}
+                onMouseDown={(ev: { stopPropagation(): void }) => {
+                  ev.stopPropagation()
+                  activate(row)
+                }}
               >
                 <text fg={EDITABLE_INDEX.get(row) === cursor() ? theme.text.base : theme.text.muted}>
                   {EDITABLE_INDEX.get(row) === cursor() ? '▌ ' : '  '}{row.title}
@@ -377,7 +395,14 @@ function SurfbirdSettings(props: {
 function openSettings(context: Context, cursor = 0, draftState?: DraftState) {
   const state = draftState ?? createStore<Draft>({})
   context.ui.dialog.show(
-    () => <SurfbirdSettings initialCursor={cursor} draftState={state} onReopen={(c, d) => openSettings(context, c, d)} />,
+    () => (
+      <SurfbirdSettings
+        context={context}
+        initialCursor={cursor}
+        draftState={state}
+        onReopen={(c, d) => openSettings(context, c, d)}
+      />
+    ),
     () => {},
   )
   // dialog.show 内部 replace 会把 size/centered 重置——必须在 show 之后 set
