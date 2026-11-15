@@ -47,6 +47,22 @@ function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined
 }
 
+/** ws(s)://…/devtools/browser 或 http(s)://base → http(s)://host（探活 /json/version 用）。 */
+export function endpointHttpBase(endpoint: string): string | undefined {
+  try {
+    const u = new URL(endpoint)
+    if (u.protocol === 'ws:') u.protocol = 'http:'
+    else if (u.protocol === 'wss:') u.protocol = 'https:'
+    else if (u.protocol !== 'http:' && u.protocol !== 'https:') return undefined
+    u.pathname = ''
+    u.search = ''
+    u.hash = ''
+    return u.toString().replace(/\/$/, '')
+  } catch {
+    return undefined
+  }
+}
+
 function num(v: unknown, d: number, min = 1): number {
   // options 是无 schema 校验的裸 JSON——对齐 DSH schemastery 的 .min() 约束，钳到下限
   return typeof v === 'number' && Number.isFinite(v) ? Math.max(min, v) : d

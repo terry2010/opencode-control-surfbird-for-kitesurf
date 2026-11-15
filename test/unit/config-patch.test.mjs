@@ -1,7 +1,7 @@
-// gui/config-patch.ts 单测：options 补丁写回 opencode.json(c) 的纯函数逻辑。
+// config-patch.ts 单测：options 补丁写回 opencode.json(c) 的纯函数逻辑。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isOwnSpec, mergeOptions, patchPluginOptions, readPluginOptions } from '../../src/gui/config-patch.ts'
+import { isOwnSpec, mergeOptions, patchPluginOptions, readPluginOptions } from '../../src/config-patch.ts'
 
 test('isOwnSpec: bare name, versioned, file:// and local path basename', () => {
   assert.ok(isOwnSpec('opencode-control-surfbird-for-kitesurf'))

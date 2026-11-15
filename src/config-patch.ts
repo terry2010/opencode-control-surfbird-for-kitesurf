@@ -1,5 +1,6 @@
 /**
- * opencode-control-surfbird-for-kitesurf — 全局配置文件补丁（纯函数，可离线单测）。
+ * opencode-control-surfbird-for-kitesurf — 配置文件补丁（纯函数，可离线单测）。
+ * GUI main 与 TUI 设置页共用（host 无关；放 src/ 根目录供两端引用）。
  *
  * GUI 设置页把插件 options 写回全局 opencode.json(c)：entry 从字符串形式
  * "opencode-control-surfbird-for-kitesurf" 升级为 { package, options } 对象形式。
@@ -70,6 +71,16 @@ export function mergeOptions(
     out[key] = value
   }
   return out
+}
+
+/** 文档里是否已有指向本包的 plugins entry（区分"无 entry"与"entry options 为空"）。 */
+export function pluginEntryPresent(text: string): boolean {
+  const errors: ParseError[] = []
+  const config: unknown = parse(text, errors, { allowTrailingComma: true })
+  if (errors.length || typeof config !== 'object' || config === null || Array.isArray(config)) return false
+  const plugins = (config as Record<string, unknown>).plugins
+  if (!Array.isArray(plugins)) return false
+  return plugins.some((item) => isOwnSpec(entrySpec(item)))
 }
 
 /** 从配置文件文本读出本插件当前的 options；文档非法或没有本包 entry 时返回 {}。 */
