@@ -100,11 +100,27 @@ function storeToken(content: string, target: string): { path: string; encrypted:
   }
 }
 
+/** IPC setOptions 允许写回的 options 键——与 src/config.ts 的 ResolvedConfig 字段一一对应。 */
+const OPTION_KEYS = new Set([
+  'endpoint',
+  'token',
+  'tokenFile',
+  'requestTimeoutMs',
+  'keepaliveMs',
+  'maxSessions',
+  'idleEvictMs',
+  'screenshotDir',
+  'debugLog',
+])
+
 const main: Plugin.MainSetup = (ctx) => {
   ctx.provide(ConfigIpc, {
     configPath: () => resolveConfigPath(),
     getOptions: () => readOptions(),
     setOptions: async (patch) => {
+      for (const key of Object.keys(patch)) {
+        if (!OPTION_KEYS.has(key)) throw new Error(`unknown option key: ${key}`)
+      }
       const file = await resolveConfigPath()
       const updated = patchPluginOptions(await readConfigText(file), patch)
       await mkdir(path.dirname(file), { recursive: true })
