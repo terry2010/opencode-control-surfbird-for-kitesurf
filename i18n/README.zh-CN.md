@@ -176,7 +176,7 @@ count occurrences with surfbird_find, then screenshot just the repo title area.
 | 输出 | `surfbird_screenshot`（viewport/clip/element/fullPage）、`surfbird_pdf` |
 | 诊断 | `surfbird_console`、`surfbird_network` |
 
-截图和 PDF 写入 `screenshotDir`（或 `$TMPDIR/surfbird`），以 `file://` URI 作为附件返回，同时给出路径。
+截图写入 `screenshotDir`（或 `$TMPDIR/surfbird`）并以内联图片附件返回（data URI，≤8 MiB——更大的截图只回路径）；PDF 只返回保存路径。
 
 ## 引擎边界
 

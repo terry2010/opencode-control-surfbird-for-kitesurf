@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `surfbird_screenshot`/`surfbird_pdf` no longer emit `file://` content parts —
+  OpenCode stores tool-result file parts verbatim and its LLM compiler rejects
+  `file:` URIs, so one screenshot made every later turn of the session fail
+  (anomalyco/opencode#62870). Screenshots now inline as `data:` URIs (≤8 MiB,
+  larger captures return the path only); PDFs return the saved path only.
+
 ## [0.1.0] - 2026-11-15
 
 ### Added

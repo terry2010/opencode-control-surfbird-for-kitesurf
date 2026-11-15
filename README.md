@@ -176,7 +176,7 @@ Expected chain: `navigate` → `snapshot`(find searchbox ref) → `fill` → `pr
 | Output | `surfbird_screenshot` (viewport/clip/element/fullPage), `surfbird_pdf` |
 | Diagnostics | `surfbird_console`, `surfbird_network` |
 
-Screenshots and PDFs are written to `screenshotDir` (or `$TMPDIR/surfbird`) and returned as file attachments (`file://` URI) alongside the path.
+Screenshots are written to `screenshotDir` (or `$TMPDIR/surfbird`) and inlined as image attachments (data URI, ≤8 MiB — larger captures return the path only); PDFs return the saved path only.
 
 ## Engine limits
 

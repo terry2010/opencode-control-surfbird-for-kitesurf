@@ -9,13 +9,13 @@
  *   跨 session 各自独立浏览器连接
  * - context.sessionID 为 session key（OpenCode session id 即隔离边界）
  * - context.signal 透传到 CDP/等待（用户停止调用时中止）
- * - 截图/PDF 落盘 outputDir/tmp，返回 file content part（file:// URI）
+ * - 截图/PDF 落盘 outputDir/tmp；截图以内联 data: URI 作 file content part 返回，
+ *   PDF 只回路径（application/pdf 内联会被部分 provider 拒绝）
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import type { Plugin } from '@opencode/plugin'
 import { SessionRegistry, type SessionBrowser } from './cdp/session.ts'
 import { SurfbirdError, isBrowserResetError, type JsonObject } from './cdp/types.ts'
@@ -436,7 +436,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     name: 'surfbird_screenshot',
-    description: 'Capture the tab viewport, a page rect via clip, or a single element via target(ref/selector)+padding (or fullPage via temporary viewport resize — engine has no captureBeyondViewport). Returns the image as a file attachment plus a saved path; text-only models cannot see it — use snapshot/extract/wait for self-verification. Writes to screenshotDir/tmp. Engine returns placeholder+error field on failure — the tool checks it. Dimensions clamp to engine limits (side ≤2560, ≤2560×1440 px).',
+    description: 'Capture the tab viewport, a page rect via clip, or a single element via target(ref/selector)+padding (or fullPage via temporary viewport resize — engine has no captureBeyondViewport). Returns the image inlined as an attachment plus a saved path; text-only models cannot see it — use snapshot/extract/wait for self-verification. Writes to screenshotDir/tmp. Engine returns placeholder+error field on failure — the tool checks it. Dimensions clamp to engine limits (side ≤2560, ≤2560×1440 px).',
     parameters: {
       tabId: TAB_ID,
       fullPage: SB('Resize viewport to full content size before capture (clamped to engine limits), then restore.'),
@@ -470,7 +470,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     name: 'surfbird_pdf',
-    description: 'Print the tab to PDF (Page.printToPDF). Returns a file attachment + saved path. Engine failures come back as {data, error} — checked. paperWidth/Height are inches; preferCSSPageSize honors the page\'s own @page size.',
+    description: 'Print the tab to PDF (Page.printToPDF). Saves to screenshotDir/tmp and returns the path + size — PDFs are not inlined as attachments. Engine failures come back as {data, error} — checked. paperWidth/Height are inches; preferCSSPageSize honors the page\'s own @page size.',
     parameters: {
       tabId: TAB_ID,
       landscape: SB('Landscape orientation.'),
@@ -794,12 +794,17 @@ async function screenshot(sess: SessionBrowser, deps: ToolsDeps, args: Record<st
   await mkdir(dir, { recursive: true })
   const path = join(dir, name)
   await writeFile(path, buf)
+  // OpenCode ≤2.2.x stores tool-result file parts verbatim and rejects `file:` URIs
+  // at LLM compile time — one such result kills every later turn of the session
+  // (anomalyco/opencode#62870). Inline as a data: URI instead; oversized images
+  // fall back to path-only so the base64 is not replayed on every turn.
+  const inline = buf.length <= 8 * 1024 * 1024
   return ok({
-    text: `Screenshot ${buf.length} bytes (${format}${fullPage ? `, fullPage ${resized?.width ?? '?'}x${resized?.height ?? '?'}` : ''}${clip ? ', clipped' : ''}) saved to ${path}.`,
+    text: `Screenshot ${buf.length} bytes (${format}${fullPage ? `, fullPage ${resized?.width ?? '?'}x${resized?.height ?? '?'}` : ''}${clip ? ', clipped' : ''}) saved to ${path}.${inline ? '' : ' Too large to inline — open the path directly.'}`,
     path,
     bytes: buf.length,
     format,
-    file: { uri: pathToFileURL(path).href, mime: mediaType, name } satisfies FilePart,
+    ...(inline ? { file: { uri: `data:${mediaType};base64,${buf.toString('base64')}`, mime: mediaType, name } satisfies FilePart } : {}),
   })
 }
 
@@ -830,11 +835,12 @@ async function pdf(sess: SessionBrowser, deps: ToolsDeps, args: Record<string, J
   const name = uniqueName('surfbird', 'pdf')
   const path = join(dir, name)
   await writeFile(path, buf)
+  // No file part: `file:` URIs kill the session (opencode#62870) and inlined
+  // `data:application/pdf` is rejected by providers without PDF support.
   return ok({
     text: `PDF saved to ${path} (${buf.length} bytes).`,
     path,
     bytes: buf.length,
-    file: { uri: pathToFileURL(path).href, mime: 'application/pdf', name } satisfies FilePart,
   })
 }
 
