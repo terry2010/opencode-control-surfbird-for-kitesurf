@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-23
+
+### Fixed
+
+- `skills/surfbird-control`: agents must quote tool-returned screenshot/PDF
+  paths verbatim — models tended to abbreviate long `$TMPDIR` paths to
+  `/var/folders/.../x.png`, which is unusable.
+
 ## [0.5.0] - 2026-11-23
 
 ### Added
