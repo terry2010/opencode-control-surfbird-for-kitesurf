@@ -201,3 +201,10 @@ npm run test:live # live smoke — needs SURFBIRD_URL/TOKEN or a tunnel to a rea
 ## License
 
 [Apache-2.0](LICENSE)
+
+## Related projects
+
+- [dsh-control-surfbird-for-kitesurf](https://github.com/terry2010/dsh-control-surfbird-for-kitesurf) — sibling plugin: the same 28 `surfbird_*` tools for [DSH](https://www.deepseek.com/) (DeepSeek Harness); shares this repo's host-independent `src/cdp/` core
+- [surfbird](https://github.com/terry2010/surfbird) — self-hosted Docker distribution of Kitesurf with token auth, REST proxy and MCP server
+- [Kitesurf](https://github.com/cloudflare/kitesurf) — Cloudflare's experimental browser engine built for AI agents; runs on Workers and speaks CDP
+- [OpenCode](https://opencode.ai/) — the agent client this plugin extends

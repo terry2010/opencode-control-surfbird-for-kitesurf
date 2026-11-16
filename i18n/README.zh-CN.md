@@ -201,3 +201,10 @@ npm run test:live # live 冒烟——需要 SURFBIRD_URL/TOKEN 或到真实引�
 ## 许可证
 
 [Apache-2.0](../LICENSE)
+
+## 相关项目
+
+- [dsh-control-surfbird-for-kitesurf](https://github.com/terry2010/dsh-control-surfbird-for-kitesurf) —— 姊妹插件：同一套 28 个 `surfbird_*` 工具的 [DSH](https://www.deepseek.com/)（DeepSeek Harness）版本；与本仓库共享 host 无关的 `src/cdp/` 核心
+- [surfbird](https://github.com/terry2010/surfbird) —— Kitesurf 的自托管 Docker 发行版，含 token 认证、REST 代理和 MCP 服务
+- [Kitesurf](https://github.com/cloudflare/kitesurf) —— Cloudflare 的实验性浏览器引擎，为 AI agent 而生；跑在 Workers 上，讲 CDP
+- [OpenCode](https://opencode.ai/) —— 本插件所扩展的 agent 客户端
