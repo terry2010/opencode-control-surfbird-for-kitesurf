@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-23
+
+### Added
+
+- **Desktop settings page** via `./gui-experimental` (Settings → Surfbird):
+  endpoint, token file with paste/import (machine-bound `surfbird-v1:`
+  encryption, plaintext never touches opencode.json), session limits,
+  timeouts, screenshot dir, debug log, and live `/json/version` probe —
+  writes back through jsonc-parser comment-preserving patches with
+  atomic tmp/rename writes.
+- **TUI settings dialog** via `./tui` entry — `/surfbird-settings` slash
+  command (also in command palette): same fields as desktop, draft +
+  "Save changes" flow that survives prompt-dialog replacement, bilingual
+  parity for field semantics.
+
 ### Fixed
 
 - `surfbird_screenshot`/`surfbird_pdf` no longer emit `file://` content parts —
@@ -14,6 +29,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `file:` URIs, so one screenshot made every later turn of the session fail
   (anomalyco/opencode#62870). Screenshots now inline as `data:` URIs (≤8 MiB,
   larger captures return the path only); PDFs return the saved path only.
+- TUI settings dialog froze (arrows/mouse unresponsive): `lib/tui.js` was
+  emitted by tsc `react-jsx` which evaluates JSX expressions eagerly and
+  breaks Solid signal subscriptions — now built with
+  `esbuild-plugin-solid` universal transform (`build.tui.mjs`).
+- `build.tui.mjs` `packages: 'external'` left `jsonc-parser` (devDep) as a
+  bare external import in `lib/tui.js` — the TUI entry crashed on
+  npm-installed plugins; npm deps are now inlined (host modules stay external).
+- TUI paste/import token could write the token file at the old path while a
+  pending `tokenFile` draft pointed config elsewhere — draft now wins.
+- `setOptions` GUI IPC accepted arbitrary option keys — whitelisted to the
+  `ResolvedConfig` surface.
+- Tool JSON Schemas dropped nested `required` (e.g. screenshot `clip`
+  x/y/width/height looked optional to the model).
+- Numeric options (`maxSessions`/`idleEvictMs`/timeouts) clamped to DSH
+  minimums — opencode.json has no schema validation.
+- TUI: unhandled rejection on config discovery failure, silent Save before
+  config file resolution; debug log path now honors `OPENCODE_CONFIG_DIR`/
+  `XDG_CONFIG_HOME`.
+
+### Changed
+
+- Shared config/token layer extracted (`src/config-file.ts`,
+  `src/config-patch.ts`, `src/token-store.ts`) — server, GUI main and TUI
+  settings all read/write the same opencode.json plugin options.
 
 ## [0.1.0] - 2026-11-15
 
