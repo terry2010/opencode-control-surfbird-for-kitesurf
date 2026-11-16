@@ -15,8 +15,19 @@ await build({
   target: 'es2022',
   logLevel: 'warning',
   // 宿主 runtime 会改写这些 specifier 到 host 实例——保持 external
-  //（尤其 solid-js/@opentui，插件若带自己的副本会与宿主渲染图谱失联）
-  packages: 'external',
+  //（尤其 solid-js/@opentui，插件若带自己的副本会与宿主渲染图谱失联）。
+  // 不能用 packages:'external'：jsonc-parser 等 npm devDep 也会外链，
+  // npm 安装的插件运行时缺依赖直接崩（devDep 不随包安装）。
+  external: [
+    '@opencode/plugin',
+    '@opencode/plugin/*',
+    '@opentui/*',
+    'solid-js',
+    'solid-js/*',
+    'effect',
+    'effect/*',
+    'node:*',
+  ],
   plugins: [solidPlugin({ solid: { generate: 'universal', moduleName: '@opentui/solid' } })],
 })
 console.log('lib/tui.js (solid universal transform)')

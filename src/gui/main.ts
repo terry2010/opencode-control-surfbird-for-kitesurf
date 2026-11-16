@@ -71,13 +71,12 @@ const main: Plugin.MainSetup = (ctx) => {
         out.probeError = 'endpoint is not a valid URL'
         return out
       }
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 5000)
       try {
-        const ctrl = new AbortController()
-        const timer = setTimeout(() => ctrl.abort(), 5000)
         const headers: Record<string, string> = {}
         if (c.token) headers.authorization = `Bearer ${c.token}`
         const res = await fetch(`${base}/json/version`, { signal: ctrl.signal, headers })
-        clearTimeout(timer)
         out.probeStatus = res.status
         if (res.ok) {
           const v = (await res.json()) as Record<string, unknown>
@@ -89,6 +88,8 @@ const main: Plugin.MainSetup = (ctx) => {
         }
       } catch (e) {
         out.probeError = e instanceof Error ? e.message : String(e)
+      } finally {
+        clearTimeout(timer)
       }
       return out
     },

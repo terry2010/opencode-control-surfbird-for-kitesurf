@@ -130,13 +130,12 @@ function SurfbirdSettings(props: {
       if (!base) {
         out.probeError = 'endpoint is not a valid URL'
       } else {
+        const ctrl = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(), 4000)
         try {
-          const ctrl = new AbortController()
-          const timer = setTimeout(() => ctrl.abort(), 4000)
           const headers: Record<string, string> = {}
           if (c.token) headers.authorization = `Bearer ${c.token}`
           const res = await fetch(`${base}/json/version`, { signal: ctrl.signal, headers })
-          clearTimeout(timer)
           out.probeStatus = res.status
           if (res.ok) {
             const v = (await res.json()) as Record<string, unknown>
@@ -148,6 +147,8 @@ function SurfbirdSettings(props: {
           }
         } catch (e) {
           out.probeError = e instanceof Error ? e.message : String(e)
+        } finally {
+          clearTimeout(timer)
         }
       }
       setStatus(out)
@@ -157,10 +158,18 @@ function SurfbirdSettings(props: {
   }
 
   // 首次打开：定位 entry 所在配置文件（项目级优先）并探活
-  void findPluginConfig(context.location?.directory).then(async (l) => {
-    setLoc(l)
-    await probe()
-  })
+  void findPluginConfig(context.location?.directory)
+    .then(async (l) => {
+      setLoc(l)
+      await probe()
+    })
+    .catch((e) => {
+      setStatus({
+        reachable: false, product: '', protocolVersion: '', probeStatus: 0,
+        probeError: `config discovery failed: ${e instanceof Error ? e.message : String(e)}`,
+        configSource: '', tokenSet: false, tokenFile: '', tokenFileEncrypted: false, tokenFileError: '',
+      })
+    })
 
   const toast = (message: string, variant: 'info' | 'success' | 'warning' | 'error' = 'info') =>
     context.ui.toast.show({ message, variant })
@@ -168,7 +177,10 @@ function SurfbirdSettings(props: {
   /** 写盘成功 = 插件代际重建在即——toast 提示后关 dialog，避免死界面。 */
   const commit = async (patch: Options, message: string, variant: 'success' | 'warning' = 'success') => {
     const file = loc().file
-    if (!file) return
+    if (!file) {
+      toast('Config file not resolved yet — try again', 'warning')
+      return
+    }
     try {
       await writePluginOptions(file, patch)
       toast(`${message} — reopen with /surfbird-settings`, variant)
@@ -232,7 +244,13 @@ function SurfbirdSettings(props: {
     return strOpt(options(), row.key) ?? ''
   }
 
-  const tokenTarget = () => strOpt(options(), 'tokenFile') ?? join(configDirectory(), 'surfbird-token')
+  // draft 里待保存的 tokenFile 优先——否则 token 写进旧文件而补丁指向新路径。
+  const tokenTarget = () => {
+    const d = draft.tokenFile
+    if (typeof d === 'string' && d.trim()) return d.trim()
+    if (d === null) return join(configDirectory(), 'surfbird-token')
+    return strOpt(options(), 'tokenFile') ?? join(configDirectory(), 'surfbird-token')
+  }
 
   /** token 落盘 + （必要时）把 tokenFile 写进同一笔 options 补丁，合并 pending draft 一次写。 */
   const afterTokenImport = (result: { path: string; encrypted: boolean }) => {

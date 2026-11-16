@@ -25,7 +25,11 @@ import { resolveConfig, type ResolvedConfig } from './config.ts'
 
 function envDebug(msg: string): void {
   try {
-    const dir = join(homedir(), '.config', 'opencode')
+    // 与 config-file.ts 的 configDirectory() 同款解析；内联而非 import——
+    // config-file 依赖 devDep jsonc-parser，拉进来会让 server 入口运行时缺依赖。
+    const dir =
+      process.env.OPENCODE_CONFIG_DIR ??
+      join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), 'opencode')
     mkdirSync(dir, { recursive: true })
     appendFileSync(join(dir, 'surfbird-debug.log'), `${new Date().toISOString()} ${msg}\n`)
   } catch { /* debug log 尽力而为 */ }
